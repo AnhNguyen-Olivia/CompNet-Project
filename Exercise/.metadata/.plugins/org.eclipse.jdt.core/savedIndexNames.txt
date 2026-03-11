@@ -1,0 +1,7 @@
+INDEX VERSION 1.134+E:\VGU_Summer_26-26\CompNet-2\CompNet-Project\Exercise\.metadata\.plugins\org.eclipse.jdt.core
+252873782.index
+3753988375.index
+835661883.index
+1101382836.index
+916648994.index
+1865797976.index

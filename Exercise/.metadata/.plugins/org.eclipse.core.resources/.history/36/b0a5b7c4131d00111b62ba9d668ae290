@@ -1,0 +1,36 @@
+package w1ex5;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+public class TCPServer {
+	public static void main(String [] args){
+		try{
+				ServerSocket ss = new ServerSocket(3456);
+				Socket con = ss.accept();
+				
+				DataInputStream in = new DataInputStream(con.getInputStream());
+				DataOutputStream out = new DataOutputStream(con.getOutputStream());
+				
+				int num1 = in.readInt();
+				int num2 = in.readInt();
+				
+				String value = in.readUTF();
+				
+				float result = operation(num1, num2, value);
+				out.writeFloat(result);
+				
+				con.close();
+			}catch(Exception e){e.printStackTrace();}
+	}
+	
+	static float operation(int num1, int num2, String value){
+		switch(value) {
+		case "*": return num1 * num2;
+		case "+": return num1 + num2;
+		case "-": return num1 - num2;
+		case "/": return (float)num1/num2;
+		default: return 0.0f;
+		}
+	}
+}

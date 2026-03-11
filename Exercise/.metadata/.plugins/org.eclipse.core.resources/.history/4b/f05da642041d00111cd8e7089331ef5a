@@ -1,0 +1,34 @@
+public static void main(String[] args){
+    try{
+        System.out.println("1. Creating ServerSocket...");
+        ServerSocket ss = new ServerSocket(1234);
+        System.out.println("2. Waiting for client...");
+        
+        Socket con = ss.accept();
+        System.out.println("3. Client connected!");
+        
+        DataInputStream in = new DataInputStream(con.getInputStream());
+        DataOutputStream out = new DataOutputStream(con.getOutputStream());
+        
+        System.out.println("4. Reading numbers...");
+        int num1 = in.readInt();
+        int num2 = in.readInt();
+        System.out.println("5. Read: " + num1 + ", " + num2);
+        
+        System.out.println("6. Reading operator...");
+        String value = in.readUTF();
+        System.out.println("7. Operator: '" + value + "'");
+        
+        float result = operation(num1, num2, value);
+        System.out.println("8. Result: " + result);
+        
+        out.writeFloat(result);
+        System.out.println("9. Sent result");
+        
+        con.close();
+        ss.close();
+        System.out.println("10. All closed");
+    }catch(Exception e){
+        e.printStackTrace();
+    }
+}

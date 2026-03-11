@@ -1,0 +1,33 @@
+package w1ex5;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+public class TCPClient {
+	public static void main(String [] args){
+		try{
+			Socket s = new Socket("localhost", 3456);
+			
+			DataInputStream Network_in = new DataInputStream(s.getInputStream());
+			DataOutputStream Network_out = new DataOutputStream(s.getOutputStream());
+			
+			Scanner keyboard = new	 Scanner(System.in);
+			System.out.println("Please input two integers:");
+			int data1 = keyboard.nextInt();
+			int data2 = keyboard.nextInt();
+			keyboard.nextLine();
+			
+			System.out.println("Please input a arithmetic operation (+, -, *, / ):");
+			String data3 = keyboard.nextLine();
+			
+			Network_out.writeInt(data1);
+			Network_out.writeInt(data2);
+			Network_out.writeUTF(data3);
+			
+			float result = Network_in.readFloat();
+			System.out.println("Data from sever: " + result);
+			
+			s.close();
+		}catch(Exception e){}
+	}
+}
