@@ -1,4 +1,5 @@
 package ftpclient.com;
+import ftpclient.com.helper;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -7,26 +8,66 @@ public class Main {
     @SuppressWarnings("resource")
     public static void main(String[] args) {
         try{
-            Socket s = new Socket("ftp.dlptest.com", 21);
             Scanner sc = new Scanner(System.in);
+            System.out.println("[System]> Before we start, do you want to login as anoymous? (y/n)");
+            System.out.print("> ");
+            String choice = sc.nextLine();
 
-            BufferedWriter Network_out = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()));
-            BufferedReader Network_in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            Socket socket;
+            switch(choice){
+                case "y":
+                    socket = new Socket("ftp.gnu.org", 21);
+                    break;
+                case "n":
+                    socket = new Socket("ftp.dlptest.com", 21);
+                    break;
+                default:
+                    System.out.println("[System]> Invalid choice. Please enter y or n.");
+                    return;
+            }
+
+            BufferedWriter Network_out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            BufferedReader Network_in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            
+
+            switch(choice){
+                case "y": helper.AnonymousLogin(Network_in, Network_out); break;
+                case "n": helper.CustomLogin(Network_in, Network_out); break;
+            }
 
             while(true){
-                while(true){
-                    String serverText = Network_in.readLine();
-                    System.out.println("Server: " + serverText);
-                    if(serverText.charAt(3) == ' ') break;
+                System.out.print("> ");
+                String text = sc.nextLine().trim();
+                if (text.isEmpty()) {
+                    continue;
                 }
 
-                String text = sc.nextLine();
-                Network_out.write(text + "\r\n");
-                Network_out.flush();
+                String[] inputParts = text.split("\\s+");
+                String command = inputParts[0].toLowerCase();
 
-                if(text.equals("quit")) break;
+                if(command.equalsIgnoreCase("quit")){
+                    helper.sendCommand(Network_out, command.toUpperCase());
+                    helper.readReply(Network_in);
+                    break;
+                }else if(command.equalsIgnoreCase("pwd")){
+                    helper.sendCommand(Network_out, command.toUpperCase());
+                    helper.readReply(Network_in);
+                }else if(command.equalsIgnoreCase("cd")){
+                    if(inputParts.length > 1){
+                        String folderName = inputParts[1];
+                        helper.sendCommand(Network_out, "CWD " + folderName);
+                        helper.readReply(Network_in);
+                    }else{
+                        System.out.println("[System]> Error: Please specify a directory [command: cd <folderName>]");
+                    }
+                }else if(command.equalsIgnoreCase("ls")){
+                    helper.listDirectory(Network_in, Network_out);
+                }else{
+                    helper.sendCommand(Network_out, text);
+                    helper.readReply(Network_in);
+                }
             }
-            s.close();
+            socket.close();
         }catch(Exception e){e.printStackTrace();}
     }
 }
