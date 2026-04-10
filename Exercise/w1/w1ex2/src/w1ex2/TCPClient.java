@@ -6,7 +6,7 @@ import java.util.*;
 public class TCPClient {
 	public static void main(String [] args) {
 		try{
-			Socket s = new Socket("localhost", 8777);
+			Socket s = new Socket("localhost", 1234);
 			s.setSoTimeout(5000);
 			
 			BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));

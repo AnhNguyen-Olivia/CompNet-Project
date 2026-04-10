@@ -5,7 +5,7 @@ import java.net.*;
 public class TCPServer{
 	public static void main(String [] args) {
 		try{
-			ServerSocket ss = new ServerSocket(8777);
+			ServerSocket ss = new ServerSocket(1234);
 			Socket con = ss.accept();
 			
 			

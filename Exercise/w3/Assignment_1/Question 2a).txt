@@ -1,0 +1,8 @@
+Question 2a)
+I designed the packet format based on the requirement that each packet contains only one sensor reading and is sent immediately after the user enters it.
+
+Packet format: [SequenceNumber:int] [Type:String] [Value:String], separated by a space character.
+
+The SequenceNumber is assigned by the client in the exact order the user enters the readings, starting from 0 or 1 and increasing by 1 for each packet sent. The Type indicates the kind of sensor reading, such as TEMP, HUMID, DOOR, or END. The Value stores the actual sensor data, where room temperature is a float, humidity is an integer, and door status is a string. For the END packet, the value field is empty or omitted.
+
+This design allows the server to correctly interpret each packet and restore the original input order even if UDP packets arrive out of order, assuming no packet loss or duplication.
