@@ -1,73 +1,141 @@
 package ftpclient.com;
-import ftpclient.com.helper;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
+/**
+ * Main class that serves as the entry point for the FTP client application. 
+ * It handles user input for login type (anonymous or custom), establishes a connection to the FTP server, 
+ * and processes user commands in a loop until the user decides to quit. 
+ *  ദ്ദി ≽^⎚˕⎚^≼ .ᐟ
+ * @author Anh_Nguyen
+ */
 public class Main {
-    @SuppressWarnings("resource")
-    public static void main(String[] args) {
-        try{
-            Scanner sc = new Scanner(System.in);
-            System.out.println("[System]> Before we start, do you want to login as anoymous? (y/n)");
+    /**
+     * Helper method to determine the login type (anonymous or custom) based on user input.
+     * ฅ^•ﻌ•^ฅ
+     * @param scanner
+     * @return
+     */
+    private static boolean loginType(Scanner scanner){
+        while(true){
+            System.out.println("[System]> Login as anonymous? [y/n]");
             System.out.print("> ");
-            String choice = sc.nextLine();
-
-            Socket socket;
-            switch(choice){
-                case "y":
-                    socket = new Socket("ftp.gnu.org", 21);
+            String input = scanner.nextLine().trim().toLowerCase();
+            switch (input) {
+                case "y": return true;
+                case "n": return false;
+                default: System.out.println("[System]> Invalid choice. Please enter y or n.");
                     break;
-                case "n":
-                    socket = new Socket("ftp.dlptest.com", 21);
-                    break;
-                default:
-                    System.out.println("[System]> Invalid choice. Please enter y or n.");
-                    return;
             }
+        }
+    }
+    /**
+     * Main command loop that continuously prompts the user for commands until they choose to quit.
+     * @param scanner
+     * @param in
+     * @param out
+     * @throws Exception
+     */
+    private static void runCommand(Scanner scanner, BufferedReader in, BufferedWriter out) throws Exception{
+        while(true){
+            System.out.print("> ");
+            String line = scanner.nextLine().trim();
 
-            BufferedWriter Network_out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            BufferedReader Network_in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            if(line.isEmpty()) continue;
+
+            String[] parts = line.split("\\s+", 2); // Split into command and argument (if any)
+            String command = parts[0].toLowerCase();
+            String argument = parts.length > 1 ? helper.stripMatchingQuotes(parts[1].trim()) : "";
+
+            if(!handleCommand(command, argument, in, out)) break;
+        }
+    }
+    /***
+     * Handles the execution of a given command with its argument.
+     * @param command
+     * @param argument
+     * @param in
+     * @param out
+     * @return
+     * @throws Exception
+     */
+    private static boolean handleCommand(String command, String argument, BufferedReader in, BufferedWriter out) throws Exception{
+        switch (command) {
+            case "quit":
+                helper.sendCommand(out, "QUIT");
+                helper.readReply(in);
+                return false;
             
+            case "pwd":
+                helper.sendCommand(out, "PWD");
+                helper.readReply(in);
+                break;
 
-            switch(choice){
-                case "y": helper.AnonymousLogin(Network_in, Network_out); break;
-                case "n": helper.CustomLogin(Network_in, Network_out); break;
-            }
+            case "cd":
+                helper.requireArgument(argument, "cd <directory>").ifPresent(dir -> helper.sendAndRead(out, in, "CWD " + dir));
+                break;
 
-            while(true){
-                System.out.print("> ");
-                String text = sc.nextLine().trim();
-                if (text.isEmpty()) {
-                    continue;
-                }
+            case "ls":
+                helper.listDirectory(in, out);
+                break;
 
-                String[] inputParts = text.split("\\s+");
-                String command = inputParts[0].toLowerCase();
+            case "get":
+                helper.requireArgument(argument, "get <fileName>").ifPresent(file -> helper.getFileSafe(in, out, file));
+                break;
 
-                if(command.equalsIgnoreCase("quit")){
-                    helper.sendCommand(Network_out, command.toUpperCase());
-                    helper.readReply(Network_in);
-                    break;
-                }else if(command.equalsIgnoreCase("pwd")){
-                    helper.sendCommand(Network_out, command.toUpperCase());
-                    helper.readReply(Network_in);
-                }else if(command.equalsIgnoreCase("cd")){
-                    if(inputParts.length > 1){
-                        String folderName = inputParts[1];
-                        helper.sendCommand(Network_out, "CWD " + folderName);
-                        helper.readReply(Network_in);
-                    }else{
-                        System.out.println("[System]> Error: Please specify a directory [command: cd <folderName>]");
-                    }
-                }else if(command.equalsIgnoreCase("ls")){
-                    helper.listDirectory(Network_in, Network_out);
+            case "put":
+                helper.requireArgument(argument, "put <fileName>").ifPresent(file -> helper.uploadFileSafe(in, out, file));
+                break;
+
+            case "delete":
+                helper.requireArgument(argument, "delete <directory>").ifPresent(file -> helper.sendAndRead(out, in, "DELE " + file));
+                break;
+
+            case "mkdir":
+                helper.requireArgument(argument, "mkdir <dirName>").ifPresent(dir -> helper.sendAndRead(out, in, "MKD " + dir));
+                break;
+
+            case "rmdir":
+                helper.requireArgument(argument, "rmdir <dirName>").ifPresent(dir -> helper.sendAndRead(out, in, "RMD " + dir));
+                break;
+
+            case "help":
+                helper.printHelp();
+                break;
+
+            default:
+                helper.sendCommand(out, command.toUpperCase() + (argument.isEmpty() ? "" : " " + argument ));
+                helper.readReply(in);
+                break;
+        }
+        return true;
+    }
+    /**
+     * Main method that initializes the FTP client application. 
+     * It prompts the user for login type, establishes a connection to the FTP server,
+     * @param args
+     */
+    public static void main(String[] args) {
+        try(Scanner scanner = new Scanner(System.in)) {
+            boolean anonymous = loginType(scanner);
+            String host = anonymous ? Constants.ANONYMOUS_HOST : Constants.CUSTOM_HOST;
+            
+            try(Socket socket = new Socket(host, Constants.FTP_PORT)) {
+                BufferedWriter Network_out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                BufferedReader Network_in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                if(anonymous){
+                    helper.AnonymousLogin(Network_in, Network_out);
                 }else{
-                    helper.sendCommand(Network_out, text);
-                    helper.readReply(Network_in);
+                    helper.CustomLogin(Network_in, Network_out);
                 }
+                
+                runCommand(scanner, Network_in, Network_out);
+            } catch (Exception e) {
+                System.err.println("[Error]> " + e.getMessage());
+                e.printStackTrace();
             }
-            socket.close();
+
         }catch(Exception e){e.printStackTrace();}
     }
 }
